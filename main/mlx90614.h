@@ -22,24 +22,21 @@
 #define MLX90614_ID_NUMBER 0x3C // ID number register
 #define MLX90614_SMBUS_ADDR 0x2E // SMBus address register
 
-// Error codes
 #define NO_ERR 0
 #define ERR_DATA_BUS -1
 #define ERR_IC_VERSION -2
 
-// Helper macros
 #define TWO_BYTES_CONCAT(buf) ((uint16_t)(buf[0]) | ((uint16_t)(buf[1]) << 8))
 
-// IIR filter modes (coefficient selection for ambient temperature)
 typedef enum {
-    IIR_FILTER_1 = 0x00,   // A=1 (Default)
-    IIR_FILTER_2 = 0x01,   // A=2
-    IIR_FILTER_4 = 0x02,   // A=4
-    IIR_FILTER_8 = 0x03,   // A=8
-    IIR_FILTER_16 = 0x04,  // A=16
-    IIR_FILTER_32 = 0x05,  // A=32
-    IIR_FILTER_64 = 0x06,  // A=64
-    IIR_FILTER_128 = 0x07  // A=128
+    IIR_FILTER_1 = 0x00,
+    IIR_FILTER_2 = 0x01,
+    IIR_FILTER_4 = 0x02,
+    IIR_FILTER_8 = 0x03,
+    IIR_FILTER_16 = 0x04,
+    IIR_FILTER_32 = 0x05,
+    IIR_FILTER_64 = 0x06,
+    IIR_FILTER_128 = 0x07 
 } eIIRMode_t;
 
 // FIR filter modes (coefficient selection for object temperature)

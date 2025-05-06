@@ -5,14 +5,20 @@
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "../components/temp/mlx90614.c"
+#include "mq3.h"
+#include "wifi.h"
 
 static const char *TAG = "MLX90614_EXAMPLE";
 
-// Konfiguracja dla czujnika MLX90614
+
 #define I2C_PORT I2C_NUM_0
 #define I2C_SDA_PIN GPIO_NUM_21
 #define I2C_SCL_PIN GPIO_NUM_22
-#define MLX90614_ADDRESS 0x5A  // Domyślny adres I2C dla MLX90614
+#define MLX90614_ADDRESS 0x5A 
+
+
+#define MQ3_ADC_CHANNEL ADC1_CHANNEL_6
+#define MQ3_THRESHOLD 1800
 
 mlx90614_t sensor = {
     .i2c_port = I2C_PORT,
@@ -27,7 +33,6 @@ void mlx90614_task(void *pvParameters)
     float ambient_temp, object_temp;
     uint8_t flags;
     
-    // Inicjalizacja czujnika
     ret = mlx90614_init(&sensor);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Inicjalizacja MLX90614 nie powiodła się!");
@@ -35,21 +40,17 @@ void mlx90614_task(void *pvParameters)
         return;
     }
     
-    // Ustawienie współczynnika emisyjności (np. dla ludzkiej skóry ~0.98)
     ret = mlx90614_set_emissivity(&sensor, 0.98, false);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Ustawienie emisyjności nie powiodło się!");
     }
     
-    // Ustawienie parametrów filtrów
     ret = mlx90614_set_measured_parameters(&sensor, IIR_FILTER_4, FIR_FILTER_64);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Ustawienie parametrów filtrów nie powiodło się!");
     }
     
-    // Główna pętla zadania
     while (1) {
-        // Odczyt temperatury otoczenia
         ret = mlx90614_get_ambient_temp(&sensor, &ambient_temp);
         if (ret == ESP_OK) {
             ESP_LOGI(TAG, "Temperatura otoczenia: %.2f°C", ambient_temp);
@@ -57,7 +58,6 @@ void mlx90614_task(void *pvParameters)
             ESP_LOGE(TAG, "Błąd odczytu temperatury otoczenia");
         }
         
-        // Odczyt temperatury obiektu
         ret = mlx90614_get_object_temp(&sensor, &object_temp);
         if (ret == ESP_OK) {
             ESP_LOGI(TAG, "Temperatura obiektu: %.2f°C", object_temp);
@@ -65,19 +65,41 @@ void mlx90614_task(void *pvParameters)
             ESP_LOGE(TAG, "Błąd odczytu temperatury obiektu");
         }
         
-        // Odczyt flag czujnika
         ret = mlx90614_read_flags(&sensor, &flags);
         if (ret == ESP_OK && flags != 0) {
             ESP_LOGW(TAG, "Flagi czujnika: 0x%02X", flags);
         }
         
-        vTaskDelay(pdMS_TO_TICKS(1000)); // Odczyt co 1 sekundę
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
+
+
+
+mq3_config_t mq3 = {
+    .adc_channel = MQ3_ADC_CHANNEL,
+    .threshold = MQ3_THRESHOLD
+};
+
+void mq3_task(void *pvParameters)
+{
+    mq3_init(&mq3);
+
+
+    while (1) {
+        int value = mq3_read_raw();
+        // bool detected = mq3_detected();
+
+        ESP_LOGI("MQ3", "Poziom alkoholu: %d", value);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+
 void app_main(void)
 {
-    // Inicjalizacja NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -86,7 +108,10 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
     
     ESP_LOGI(TAG, "ESP-IDF MLX90614 przykład");
-    
-    // Utworzenie zadania dla odczytu z czujnika
-    xTaskCreate(mlx90614_task, "mlx90614_task", 4096, NULL, 5, NULL);
+
+    xTaskCreate(&wifi_task, "wifi_task", 4096, NULL, 5, NULL);
+
+    // xTaskCreate(mlx90614_task, "mlx90614_task", 4096, NULL, 5, NULL);
+    xTaskCreate(mq3_task, "mq3_task", 2048, NULL, 5, NULL);
 }
+

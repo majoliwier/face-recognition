@@ -2,7 +2,6 @@
 
 static const char *TAG = "MLX90614";
 
-// Calculate the CRC-8 with polynomial x^8+x^2+x^1+1 = 0x107
 static uint8_t crc8_calculate(uint8_t *data, size_t len) {
     uint8_t crc = 0x00;
     
@@ -21,10 +20,8 @@ static uint8_t crc8_calculate(uint8_t *data, size_t len) {
     return crc;
 }
 
-// Write to MLX90614 register
 static esp_err_t mlx90614_write_reg(mlx90614_t *dev, uint8_t reg, uint8_t *data) {
     esp_err_t ret;
-    // uint8_t buf[5]; // [device_addr, reg, data[0], data[1], crc]
     uint8_t crc_data[4];
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -34,7 +31,6 @@ static esp_err_t mlx90614_write_reg(mlx90614_t *dev, uint8_t reg, uint8_t *data)
     i2c_master_write_byte(cmd, data[0], true);
     i2c_master_write_byte(cmd, data[1], true);
     
-    // Calculate CRC
     crc_data[0] = (dev->device_addr << 1);
     crc_data[1] = reg;
     crc_data[2] = data[0];
@@ -50,10 +46,9 @@ static esp_err_t mlx90614_write_reg(mlx90614_t *dev, uint8_t reg, uint8_t *data)
     return ret;
 }
 
-// Read from MLX90614 register
 static esp_err_t mlx90614_read_reg(mlx90614_t *dev, uint8_t reg, uint8_t *data) {
     esp_err_t ret;
-    uint8_t buf[3]; // [lsb, msb, pec]
+    uint8_t buf[3];
     uint8_t crc_data[5];
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -75,7 +70,6 @@ static esp_err_t mlx90614_read_reg(mlx90614_t *dev, uint8_t reg, uint8_t *data) 
         return ret;
     }
     
-    // Verify CRC
     crc_data[0] = (dev->device_addr << 1);
     crc_data[1] = reg;
     crc_data[2] = (dev->device_addr << 1) | 1;
@@ -98,7 +92,6 @@ esp_err_t mlx90614_init(mlx90614_t *dev) {
     esp_err_t ret;
     uint8_t idBuf[2];
     
-    // Configure I2C
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,
         .sda_io_num = dev->sda_pin,
@@ -120,11 +113,9 @@ esp_err_t mlx90614_init(mlx90614_t *dev) {
         return ret;
     }
     
-    // Wake up the device if it was in sleep mode
     mlx90614_sleep_mode(dev, false);
     vTaskDelay(50 / portTICK_PERIOD_MS);
     
-    // Check if device is responding
     ret = mlx90614_read_reg(dev, MLX90614_ID_NUMBER, idBuf);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read device ID");
@@ -157,23 +148,20 @@ esp_err_t mlx90614_set_emissivity(mlx90614_t *dev, float calibrationValue, bool 
     uint8_t buf[2] = {0};
     esp_err_t ret;
     
-    uint16_t forEmissNew = 0;  // <— will hold our final FOR_EMISSIVITY
+    uint16_t forEmissNew = 0;
     if (set0X0F) {
         uint16_t curE = 0;
         uint16_t forEmissOrig = 0;
         
-        // Read current emissivity
         ret = mlx90614_read_reg(dev, MLX90614_EMISSIVITY, buf);
         if (ret != ESP_OK) return ret;
         curE = TWO_BYTES_CONCAT(buf);
         ESP_LOGD(TAG, "Current emissivity: 0x%04X", curE);
         
-        // Read FOR_EMISSIVITY register
         ret = mlx90614_read_reg(dev, MLX90614_FOR_EMISSIVITY, buf);
         if (ret != ESP_OK) return ret;
         forEmissOrig = TWO_BYTES_CONCAT(buf);
         
-        // Calculate new data value
         forEmissNew = round(((float)forEmissOrig / emissivity * curE));
         ESP_LOGD(TAG, "Calculated new FOR_EMISSIVITY value: 0x%04X", forEmissNew);
         
@@ -182,50 +170,41 @@ esp_err_t mlx90614_set_emissivity(mlx90614_t *dev, float calibrationValue, bool 
             return ESP_ERR_INVALID_STATE;
         }
         
-        // Send unlock command
         ret = mlx90614_send_command(dev, 0x60);
         if (ret != ESP_OK) return ret;
     }
     
-    // Clear emissivity register
     memset(buf, 0, sizeof(buf));
     ret = mlx90614_write_reg(dev, MLX90614_EMISSIVITY, buf);
     if (ret != ESP_OK) return ret;
     vTaskDelay(10 / portTICK_PERIOD_MS);
     
-    // Set new emissivity value
     buf[0] = (emissivity & 0x00FF);
     buf[1] = ((emissivity & 0xFF00) >> 8);
     ret = mlx90614_write_reg(dev, MLX90614_EMISSIVITY, buf);
     if (ret != ESP_OK) return ret;
     vTaskDelay(10 / portTICK_PERIOD_MS);
     
-    // Verify
     ret = mlx90614_read_reg(dev, MLX90614_EMISSIVITY, buf);
     if (ret != ESP_OK) return ret;
     ESP_LOGD(TAG, "Verification of emissivity: 0x%04X", TWO_BYTES_CONCAT(buf));
     
     if (set0X0F) {
-        // Clear FOR_EMISSIVITY register
         memset(buf, 0, sizeof(buf));
         ret = mlx90614_write_reg(dev, MLX90614_FOR_EMISSIVITY, buf);
         if (ret != ESP_OK) return ret;
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        
-        // Set new FOR_EMISSIVITY value
-        // uint16_t data = round(((float)data / emissivity * TWO_BYTES_CONCAT(buf)));
+       
         buf[0] = (forEmissNew & 0x00FF);
         buf[1] = ((forEmissNew & 0xFF00) >> 8);
         ret = mlx90614_write_reg(dev, MLX90614_FOR_EMISSIVITY, buf);
         if (ret != ESP_OK) return ret;
         vTaskDelay(10 / portTICK_PERIOD_MS);
         
-        // Verify
         ret = mlx90614_read_reg(dev, MLX90614_FOR_EMISSIVITY, buf);
         if (ret != ESP_OK) return ret;
         ESP_LOGD(TAG, "Verification of FOR_EMISSIVITY: 0x%04X", TWO_BYTES_CONCAT(buf));
         
-        // Send lock command
         ret = mlx90614_send_command(dev, 0x61);
         if (ret != ESP_OK) return ret;
     }
@@ -237,19 +216,16 @@ esp_err_t mlx90614_set_measured_parameters(mlx90614_t *dev, eIIRMode_t IIRMode, 
     uint8_t buf[2] = {0};
     esp_err_t ret;
     
-    // Read current configuration
     ret = mlx90614_read_reg(dev, MLX90614_CONFIG_REG1, buf);
     if (ret != ESP_OK) return ret;
     vTaskDelay(10 / portTICK_PERIOD_MS);
     
-    // Clear filter bits
     buf[0] &= 0xF8;
     buf[1] &= 0xF8;
     ret = mlx90614_write_reg(dev, MLX90614_CONFIG_REG1, buf);
     if (ret != ESP_OK) return ret;
     vTaskDelay(10 / portTICK_PERIOD_MS);
     
-    // Set new filter values
     buf[0] |= IIRMode;
     buf[1] |= FIRMode;
     ret = mlx90614_write_reg(dev, MLX90614_CONFIG_REG1, buf);
@@ -334,7 +310,6 @@ esp_err_t mlx90614_sleep_mode(mlx90614_t *dev, bool mode) {
     esp_err_t ret = ESP_OK;
     
     if (mode) {
-        // Enter sleep mode
         i2c_cmd_handle_t cmd = i2c_cmd_link_create();
         i2c_master_start(cmd);
         i2c_master_write_byte(cmd, (dev->device_addr << 1) | I2C_MASTER_WRITE, true);
@@ -352,10 +327,8 @@ esp_err_t mlx90614_sleep_mode(mlx90614_t *dev, bool mode) {
         
         ESP_LOGI(TAG, "Entered sleep mode");
     } else {
-        // Wake up from sleep mode
         i2c_driver_delete(dev->i2c_port);
         
-        // Set SDA and SCL pins for direct manipulation
         gpio_config_t io_conf = {};
         io_conf.intr_type = GPIO_INTR_DISABLE;
         io_conf.mode = GPIO_MODE_OUTPUT;
@@ -364,7 +337,6 @@ esp_err_t mlx90614_sleep_mode(mlx90614_t *dev, bool mode) {
         io_conf.pull_up_en = 1;
         gpio_config(&io_conf);
         
-        // Wake up sequence
         gpio_set_level(dev->scl_pin, 0);
         gpio_set_level(dev->sda_pin, 1);
         vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -372,7 +344,6 @@ esp_err_t mlx90614_sleep_mode(mlx90614_t *dev, bool mode) {
         gpio_set_level(dev->sda_pin, 0);
         vTaskDelay(50 / portTICK_PERIOD_MS);
         
-        // Reinitialize I2C
         i2c_config_t conf = {
             .mode = I2C_MODE_MASTER,
             .sda_io_num = dev->sda_pin,
@@ -394,7 +365,6 @@ esp_err_t mlx90614_sleep_mode(mlx90614_t *dev, bool mode) {
             return ret;
         }
         
-        // Dummy transmission to complete wake-up
         i2c_cmd_handle_t cmd = i2c_cmd_link_create();
         i2c_master_start(cmd);
         i2c_master_write_byte(cmd, (dev->device_addr << 1) | I2C_MASTER_WRITE, true);
@@ -413,18 +383,15 @@ esp_err_t mlx90614_set_i2c_address(mlx90614_t *dev, uint8_t addr) {
     uint8_t buf[2] = {0};
     esp_err_t ret;
     
-    // Clear address register
     ret = mlx90614_write_reg(dev, MLX90614_SMBUS_ADDR, buf);
     if (ret != ESP_OK) return ret;
     vTaskDelay(10 / portTICK_PERIOD_MS);
     
-    // Set new address
     buf[0] = addr;
     ret = mlx90614_write_reg(dev, MLX90614_SMBUS_ADDR, buf);
     if (ret != ESP_OK) return ret;
     vTaskDelay(10 / portTICK_PERIOD_MS);
     
-    // Update device address in descriptor
     dev->device_addr = addr;
     
     return ESP_OK;

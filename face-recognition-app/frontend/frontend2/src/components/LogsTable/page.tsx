@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { type Log, columns } from "./columns"
+// import { type Log, columns } from "./columns"
+import { type Log,columns } from "./columns"
 import { DataTable } from "./data-table"
 
 const mockData: Log[] = [

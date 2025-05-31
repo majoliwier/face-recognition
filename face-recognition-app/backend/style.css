@@ -1,0 +1,20 @@
+.kontener {
+  height: 300px;
+  background-color: blueviolet;
+  width: 11100px;
+  height: 50000px;
+}
+
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  background: white;
+}
+
+
+.ok {
+    height: 200000px;
+    width: 500px;
+    background-color: bisque;
+}

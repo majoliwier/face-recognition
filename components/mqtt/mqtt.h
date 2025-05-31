@@ -1,5 +1,6 @@
 #ifndef MQTT_H
 #define MQTT_H
+#define bad_led_pin 12
 
 
 #include "mqtt_client.h"

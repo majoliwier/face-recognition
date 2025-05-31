@@ -1,6 +1,6 @@
 #include "mlx90614.h"
 
-static const char *TAG_MQTT = "MLX90614";
+static const char *TAG = "MLX90614";
 
 static uint8_t crc8_calculate(uint8_t *data, size_t len) {
     uint8_t crc = 0x00;
@@ -66,7 +66,7 @@ static esp_err_t mlx90614_read_reg(mlx90614_t *dev, uint8_t reg, uint8_t *data) 
     i2c_cmd_link_delete(cmd);
     
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG_MQTT, "Error reading register: 0x%02x", reg);
+        ESP_LOGE(TAG, "Error reading register: 0x%02x", reg);
         return ret;
     }
     
@@ -78,7 +78,7 @@ static esp_err_t mlx90614_read_reg(mlx90614_t *dev, uint8_t reg, uint8_t *data) 
     uint8_t crc = crc8_calculate(crc_data, 5);
     
     if (crc != buf[2]) {
-        ESP_LOGE(TAG_MQTT, "CRC error: calc=%02x, recv=%02x", crc, buf[2]);
+        ESP_LOGE(TAG, "CRC error: calc=%02x, recv=%02x", crc, buf[2]);
         return ESP_ERR_INVALID_CRC;
     }
     
@@ -103,13 +103,13 @@ esp_err_t mlx90614_init(mlx90614_t *dev) {
     
     ret = i2c_param_config(dev->i2c_port, &conf);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG_MQTT, "I2C config failed");
+        ESP_LOGE(TAG, "I2C config failed");
         return ret;
     }
     
     ret = i2c_driver_install(dev->i2c_port, I2C_MODE_MASTER, 0, 0, 0);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG_MQTT, "I2C driver install failed");
+        ESP_LOGE(TAG, "I2C driver install failed");
         return ret;
     }
     
@@ -118,32 +118,32 @@ esp_err_t mlx90614_init(mlx90614_t *dev) {
     
     ret = mlx90614_read_reg(dev, MLX90614_ID_NUMBER, idBuf);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG_MQTT, "Failed to read device ID");
+        ESP_LOGE(TAG, "Failed to read device ID");
         return ERR_DATA_BUS;
     }
     
     uint16_t id = ((uint16_t)idBuf[1] << 8) | idBuf[0];
-    ESP_LOGI(TAG_MQTT, "Sensor ID: 0x%04X", id);
+    ESP_LOGI(TAG, "Sensor ID: 0x%04X", id);
     
     if (id == 0) {
-        ESP_LOGE(TAG_MQTT, "Invalid sensor ID");
+        ESP_LOGE(TAG, "Invalid sensor ID");
         return ERR_IC_VERSION;
     }
     
     vTaskDelay(200 / portTICK_PERIOD_MS);
-    ESP_LOGI(TAG_MQTT, "MLX90614 initialized successfully");
+    ESP_LOGI(TAG, "MLX90614 initialized successfully");
     
     return ESP_OK;
 }
 
 esp_err_t mlx90614_set_emissivity(mlx90614_t *dev, float calibrationValue, bool set0X0F) {
     if (calibrationValue > 1.0 || calibrationValue < 0.1) {
-        ESP_LOGE(TAG_MQTT, "Invalid emissivity value: %.2f (must be between 0.1 and 1.0)", calibrationValue);
+        ESP_LOGE(TAG, "Invalid emissivity value: %.2f (must be between 0.1 and 1.0)", calibrationValue);
         return ESP_ERR_INVALID_ARG;
     }
     
     uint16_t emissivity = round(65535 * calibrationValue);
-    ESP_LOGD(TAG_MQTT, "Setting emissivity to: 0x%04X", emissivity);
+    ESP_LOGD(TAG, "Setting emissivity to: 0x%04X", emissivity);
     
     uint8_t buf[2] = {0};
     esp_err_t ret;
@@ -156,17 +156,17 @@ esp_err_t mlx90614_set_emissivity(mlx90614_t *dev, float calibrationValue, bool 
         ret = mlx90614_read_reg(dev, MLX90614_EMISSIVITY, buf);
         if (ret != ESP_OK) return ret;
         curE = TWO_BYTES_CONCAT(buf);
-        ESP_LOGD(TAG_MQTT, "Current emissivity: 0x%04X", curE);
+        ESP_LOGD(TAG, "Current emissivity: 0x%04X", curE);
         
         ret = mlx90614_read_reg(dev, MLX90614_FOR_EMISSIVITY, buf);
         if (ret != ESP_OK) return ret;
         forEmissOrig = TWO_BYTES_CONCAT(buf);
         
         forEmissNew = round(((float)forEmissOrig / emissivity * curE));
-        ESP_LOGD(TAG_MQTT, "Calculated new FOR_EMISSIVITY value: 0x%04X", forEmissNew);
+        ESP_LOGD(TAG, "Calculated new FOR_EMISSIVITY value: 0x%04X", forEmissNew);
         
         if (forEmissNew  > 0x7FFF) {
-            ESP_LOGE(TAG_MQTT, "Calculated FOR_EMISSIVITY value too large: 0x%04X", forEmissNew);
+            ESP_LOGE(TAG, "Calculated FOR_EMISSIVITY value too large: 0x%04X", forEmissNew);
             return ESP_ERR_INVALID_STATE;
         }
         
@@ -187,7 +187,7 @@ esp_err_t mlx90614_set_emissivity(mlx90614_t *dev, float calibrationValue, bool 
     
     ret = mlx90614_read_reg(dev, MLX90614_EMISSIVITY, buf);
     if (ret != ESP_OK) return ret;
-    ESP_LOGD(TAG_MQTT, "Verification of emissivity: 0x%04X", TWO_BYTES_CONCAT(buf));
+    ESP_LOGD(TAG, "Verification of emissivity: 0x%04X", TWO_BYTES_CONCAT(buf));
     
     if (set0X0F) {
         memset(buf, 0, sizeof(buf));
@@ -203,7 +203,7 @@ esp_err_t mlx90614_set_emissivity(mlx90614_t *dev, float calibrationValue, bool 
         
         ret = mlx90614_read_reg(dev, MLX90614_FOR_EMISSIVITY, buf);
         if (ret != ESP_OK) return ret;
-        ESP_LOGD(TAG_MQTT, "Verification of FOR_EMISSIVITY: 0x%04X", TWO_BYTES_CONCAT(buf));
+        ESP_LOGD(TAG, "Verification of FOR_EMISSIVITY: 0x%04X", TWO_BYTES_CONCAT(buf));
         
         ret = mlx90614_send_command(dev, 0x61);
         if (ret != ESP_OK) return ret;
@@ -285,22 +285,22 @@ esp_err_t mlx90614_read_flags(mlx90614_t *dev, uint8_t *flags) {
     
     if (flagBuf[0] & (1 << 3)) {
         *flags |= 1;
-        ESP_LOGD(TAG_MQTT, "Flag: Not implemented.");
+        ESP_LOGD(TAG, "Flag: Not implemented.");
     }
     
     if (!(flagBuf[0] & (1 << 4))) {
         *flags |= (1 << 1);
-        ESP_LOGD(TAG_MQTT, "Flag: INIT - POR initialization routine is still ongoing. Low active.");
+        ESP_LOGD(TAG, "Flag: INIT - POR initialization routine is still ongoing. Low active.");
     }
     
     if (flagBuf[0] & (1 << 5)) {
         *flags |= (1 << 2);
-        ESP_LOGD(TAG_MQTT, "Flag: EE_DEAD - EEPROM double error has occurred. High active.");
+        ESP_LOGD(TAG, "Flag: EE_DEAD - EEPROM double error has occurred. High active.");
     }
     
     if (flagBuf[0] & (1 << 7)) {
         *flags |= (1 << 3);
-        ESP_LOGD(TAG_MQTT, "Flag: EEBUSY - the previous write/erase EEPROM access is still in progress. High active.");
+        ESP_LOGD(TAG, "Flag: EEBUSY - the previous write/erase EEPROM access is still in progress. High active.");
     }
     
     return ESP_OK;
@@ -321,11 +321,11 @@ esp_err_t mlx90614_sleep_mode(mlx90614_t *dev, bool mode) {
         i2c_cmd_link_delete(cmd);
         
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG_MQTT, "Failed to enter sleep mode");
+            ESP_LOGE(TAG, "Failed to enter sleep mode");
             return ret;
         }
         
-        ESP_LOGI(TAG_MQTT, "Entered sleep mode");
+        ESP_LOGI(TAG, "Entered sleep mode");
     } else {
         i2c_driver_delete(dev->i2c_port);
         
@@ -355,13 +355,13 @@ esp_err_t mlx90614_sleep_mode(mlx90614_t *dev, bool mode) {
         
         ret = i2c_param_config(dev->i2c_port, &conf);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG_MQTT, "I2C config failed during wake up");
+            ESP_LOGE(TAG, "I2C config failed during wake up");
             return ret;
         }
         
         ret = i2c_driver_install(dev->i2c_port, I2C_MODE_MASTER, 0, 0, 0);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG_MQTT, "I2C driver install failed during wake up");
+            ESP_LOGE(TAG, "I2C driver install failed during wake up");
             return ret;
         }
         
@@ -372,7 +372,7 @@ esp_err_t mlx90614_sleep_mode(mlx90614_t *dev, bool mode) {
         i2c_master_cmd_begin(dev->i2c_port, cmd, 1000 / portTICK_PERIOD_MS);
         i2c_cmd_link_delete(cmd);
         
-        ESP_LOGI(TAG_MQTT, "Exited sleep mode");
+        ESP_LOGI(TAG, "Exited sleep mode");
     }
     
     vTaskDelay(200 / portTICK_PERIOD_MS);
@@ -399,7 +399,7 @@ esp_err_t mlx90614_set_i2c_address(mlx90614_t *dev, uint8_t addr) {
 
 esp_err_t mlx90614_send_command(mlx90614_t *dev, uint8_t cmd) {
     if (cmd != 0x60 && cmd != 0x61) {
-        ESP_LOGE(TAG_MQTT, "Invalid command: 0x%02X (must be 0x60 or 0x61)", cmd);
+        ESP_LOGE(TAG, "Invalid command: 0x%02X (must be 0x60 or 0x61)", cmd);
         return ESP_ERR_INVALID_ARG;
     }
     

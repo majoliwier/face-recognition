@@ -34,23 +34,23 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/",
       icon: SquareTerminal,
       isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
+      // items: [
+      //   {
+      //     title: "History",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Starred",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Settings",
+      //     url: "#",
+      //   },
+      // ],
     },
     // {
     //   title: "Models",
@@ -73,49 +73,49 @@ const data = {
     // },
     {
       title: "Logs",
-      url: "#",
+      url: "logs",
       icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
+      // items: [
+      //   {
+      //     title: "Introduction",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Get Started",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Tutorials",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Changelog",
+      //     url: "#",
+      //   },
+      // ],
     },
     {
       title: "Settings",
       url: "#",
       icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
+      // items: [
+      //   {
+      //     title: "General",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Team",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Billing",
+      //     url: "#",
+      //   },
+      //   {
+      //     title: "Limits",
+      //     url: "#",
+      //   },
+      // ],
     },
   ],
   navSecondary: [

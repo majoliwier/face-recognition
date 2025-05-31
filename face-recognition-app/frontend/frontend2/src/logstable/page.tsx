@@ -143,7 +143,7 @@ const mockData: Log[] = [
   },
 ]
 
-export default function DemoPage() {
+export default function LogsTable() {
   const [data, setData] = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
 

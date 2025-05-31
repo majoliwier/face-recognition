@@ -1,22 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { Button } from './components/ui/button'
-import Page from './dashboard/page'
-function App() {
-  const [count, setCount] = useState(0)
+import { AppSidebar } from "@/components/app-sidebar"
+import { Separator } from "@/components/ui/separator"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
 
+
+
+// import { SensorDisplay } from "@/custom-components/Data"
+// import DemoPage from "@/logstable/page"
+
+import { Outlet } from "react-router-dom"
+
+export default function AppLayout() {
   return (
-    <>
-      {/* <div className="flex flex-col items-center justify-center min-h-svh">
-            <Button>Click me</Button>
-      </div> */}
-
-    <Page />
-  
-    </>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            {/* <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">
+                    Building Your Application
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb> */}
+          </div>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+         <Outlet/>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
-
-export default App

@@ -5,11 +5,14 @@ require("./mqttClient");
 
 require("./config/db");
 const Log = require("./models/Log");
-const User = require("./models/User")
+const User = require("./models/User");
+const usersRouter = require("./routes/users");
 
 const app = express();
 app.use(cors());
 app.use(express.json()); 
+
+app.use("/api/users", usersRouter);
 
 app.get("/api/sensor", (req, res) => {
   res.json({

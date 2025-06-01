@@ -1,6 +1,5 @@
-
 import { Button } from "../ui/button";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Camera } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table"
  
 // This type is used to define the shape of our data.
@@ -25,10 +24,10 @@ export type Log = {
   dopuszczony: boolean;
   czas: Date;
 };
- 
 
- 
-export const columns: ColumnDef<Log>[] = [
+export type VerifyHandler = (userId: string) => void;
+
+export const createColumns = (onVerify: VerifyHandler): ColumnDef<Log>[] => [
   {
     header: "Name",
     accessorFn: (row) => row.userId?.imie ?? "Unknown",
@@ -36,15 +35,51 @@ export const columns: ColumnDef<Log>[] = [
   },
   {
     accessorKey: "alkohol",
-    header: "Alcohol",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Alcohol
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const value = row.getValue("alkohol") as number;
+      return <div>{value.toFixed(2)} ‰</div>;
+    },
   },
   {
     accessorKey: "temperatura",
-    header: "Temperature",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Temperature
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const value = row.getValue("temperatura") as number;
+      return <div>{value.toFixed(1)} °C</div>;
+    },
   },
   {
     accessorKey: "dopuszczony",
-    header: "Has access?"
+    header: "Status",
+    cell: ({ row }) => {
+      const allowed = row.getValue("dopuszczony") as boolean;
+      return (
+        <div className={allowed ? "text-green-600" : "text-red-600"}>
+          {allowed ? "Allowed" : "Denied"}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "czas",
@@ -59,5 +94,30 @@ export const columns: ColumnDef<Log>[] = [
         </Button>
       )
     },
-  }
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("czas"));
+      return <div>{date.toLocaleString()}</div>;
+    },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      const userId = row.original.userId?._id;
+      
+      return (
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            if (userId) {
+              onVerify(userId);
+            }
+          }}
+          disabled={!userId}
+        >
+          <Camera className="h-4 w-4" />
+        </Button>
+      );
+    },
+  },
 ]

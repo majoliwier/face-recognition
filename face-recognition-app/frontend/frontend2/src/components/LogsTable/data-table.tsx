@@ -1,17 +1,15 @@
-import type { ColumnDef, ColumnFiltersState, SortingState } from "@tanstack/react-table"
-import { ArrowUpDown } from "lucide-react"
-
-import React from "react"
+"use client"
 
 import {
+  ColumnDef,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   useReactTable,
   getPaginationRowModel,
-  getSortedRowModel
+  getSortedRowModel,
+  SortingState,
 } from "@tanstack/react-table"
- 
+
 import {
   Table,
   TableBody,
@@ -22,48 +20,41 @@ import {
 } from "@/components/ui/table"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
- 
+import { useState } from "react"
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  onSelectUser: (row: TData) => void
+  onVerify: (row: TData) => void
 }
- 
+
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onSelectUser,
+  onVerify,
 }: DataTableProps<TData, TValue>) {
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([])
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
-    onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
     state: {
-      columnFilters,
       sorting,
     },
+    meta: {
+      onSelectUser,
+      onVerify,
+    },
   })
- 
-  return (
-    <>
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter name..."
-          value={(table.getColumn("userId")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("userId")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-      </div>
 
+  return (
+    <div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -93,14 +84,20 @@ export function DataTable<TData, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -108,7 +105,6 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button
           variant="outline"
@@ -127,6 +123,6 @@ export function DataTable<TData, TValue>({
           Next
         </Button>
       </div>
-    </>
+    </div>
   )
 }

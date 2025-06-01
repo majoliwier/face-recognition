@@ -1,247 +1,224 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
-import { type Log, createColumns } from "./columns"
+import { useState, useEffect, useRef } from 'react';
+import { columns, type Log, type User } from "./columns"
 import { DataTable } from "./data-table"
-import Webcam from "react-webcam"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
+import Webcam from 'react-webcam';
 
-// const mockData: Log[] = [
-//   {
-//     _id: "1",
-//     userId: "diana",
-//     temperatura: 36.7,
-//     alkohol: 0.05,
-//     dopuszczony: true,
-//     czas: new Date().toISOString(),
-//   },
-//   {
-//     _id: "2",
-//     userId: "diana",
-//     temperatura: 37.8,
-//     alkohol: 0.25,
-//     dopuszczony: false,
-//     czas: new Date(Date.now() - 3600000).toISOString(), // 1 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "xd",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "xd",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "xd",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "xd",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "xd",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "xd",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "xd",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "xd",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "lol",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "lol",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "lol",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "lol",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-//   {
-//     _id: "3",
-//     userId: "lol",
-//     temperatura: 35.9,
-//     alkohol: 0.00,
-//     dopuszczony: true,
-//     czas: new Date(Date.now() - 7200000).toISOString(), // 2 godz. temu
-//   },
-// ]
-
-export default function LogsTable() {
-  const [data, setData] = useState<Log[]>([])
-  const [loading, setLoading] = useState(true)
-  const [isVerifying, setIsVerifying] = useState(false)
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
-  const webcamRef = useRef<Webcam | null>(null)
+export default function LogsPage() {
+  const [logs, setLogs] = useState<Log[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<Log | null>(null);
+  const webcamRef = useRef<Webcam>(null);
+  const [isSelectingUser, setIsSelectingUser] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<string>("");
 
   const videoConstraints = {
-    width: 400,
-    height: 400,
+    width: 320,
+    height: 320,
     facingMode: "user"
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('http://localhost:3000/api/logs');
-        const logs = await response.json();
-        setData(logs);
-      } catch (error) {
-        console.error('Error fetching logs:', error);
-        toast.error('Failed to fetch logs');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-    const interval = setInterval(fetchData, 5000); // Refresh every 5 seconds
-
+    fetchLogs();
+    fetchUsers();
+    const interval = setInterval(fetchLogs, 5000); // Refresh every 5 seconds
     return () => clearInterval(interval);
   }, []);
 
-  const handleVerify = async (userId: string) => {
-    setSelectedUserId(userId);
-    setIsVerifying(true);
-  };
-
-  const handleCapture = async () => {
-    if (webcamRef.current && selectedUserId) {
-      const imageSrc = webcamRef.current.getScreenshot();
-      if (!imageSrc) {
-        toast.error('Failed to capture image');
-        return;
-      }
-
-      try {
-        const response = await fetch('http://localhost:3000/api/verify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: selectedUserId,
-            image: imageSrc,
-          }),
-        });
-
-        const result = await response.json();
-
-        if (result.verified) {
-          toast.success('Verification successful');
-        } else {
-          toast.error('Verification failed');
-        }
-      } catch (error) {
-        console.error('Error during verification:', error);
-        toast.error('Verification failed');
-      } finally {
-        setIsVerifying(false);
-        setSelectedUserId(null);
-      }
+  const fetchLogs = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/logs');
+      const data = await response.json();
+      setLogs(data);
+    } catch (error) {
+      console.error('Error fetching logs:', error);
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/users');
+      const data = await response.json();
+      setUsers(data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
 
-  const columns = createColumns(handleVerify);
+  const handleVerify = async () => {
+    if (!webcamRef.current || !selectedLog) return;
+
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc) return;
+
+    try {
+      // Convert base64 to blob
+      const base64Data = imageSrc.split(',')[1];
+      const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob());
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('image', blob, 'photo.jpg');
+      formData.append('userId', selectedLog.userId || '');
+
+      const response = await fetch('http://localhost:3000/api/users/verify', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (result.match) {
+        // Update log status based on verification and conditions
+        const updatedLog = {
+          ...selectedLog,
+          verificationStatus: 'Verified',
+          dopuszczony: selectedLog.temperatura < 37.5 && selectedLog.alkohol < 0.2
+        };
+        
+        // Update the log in the database
+        await fetch(`http://localhost:3000/api/logs/${selectedLog._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedLog),
+        });
+
+        await fetchLogs(); // Refresh the logs
+      } else {
+        // Update log status to Failed
+        const updatedLog = {
+          ...selectedLog,
+          verificationStatus: 'Failed',
+          verificationAttempts: (selectedLog.verificationAttempts || 0) + 1,
+          dopuszczony: false
+        };
+        
+        await fetch(`http://localhost:3000/api/logs/${selectedLog._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedLog),
+        });
+
+        await fetchLogs(); // Refresh the logs
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleUserSelect = async (userId: string) => {
+    if (!selectedLog) return;
+
+    try {
+      // Update the log with the selected user
+      const updatedLog = {
+        ...selectedLog,
+        userId,
+        verificationStatus: 'Pending'
+      };
+
+      await fetch(`http://localhost:3000/api/logs/${selectedLog._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedLog),
+      });
+
+      await fetchLogs(); // Refresh the logs
+      setIsSelectingUser(false);
+      setSelectedUser("");
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+  };
 
   return (
-    <>
-      <div className="container mx-auto py-10">
-        <DataTable columns={columns} data={data} />
-      </div>
+    <div className="container mx-auto py-10">
+      <DataTable 
+        columns={columns} 
+        data={logs}
+        onSelectUser={(log: Log) => {
+          setSelectedLog(log);
+          setIsSelectingUser(true);
+        }}
+        onVerify={(log: Log) => {
+          setSelectedLog(log);
+          setIsVerifying(true);
+        }}
+      />
 
+      {/* User Selection Dialog */}
+      <Dialog open={isSelectingUser} onOpenChange={setIsSelectingUser}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select User</DialogTitle>
+          </DialogHeader>
+          <Select
+            value={selectedUser}
+            onValueChange={(value) => {
+              setSelectedUser(value);
+              handleUserSelect(value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a user" />
+            </SelectTrigger>
+            <SelectContent>
+              {users.map((user) => (
+                <SelectItem key={user._id} value={user._id}>
+                  {user.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </DialogContent>
+      </Dialog>
+
+      {/* Verification Dialog */}
       <Dialog open={isVerifying} onOpenChange={setIsVerifying}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Verify User</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col items-center gap-4">
-            <Webcam
-              audio={false}
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              videoConstraints={videoConstraints}
-              className="rounded-lg"
-            />
-            <Button onClick={handleCapture}>
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-lg">
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                videoConstraints={videoConstraints}
+                className="w-full"
+              />
+            </div>
+            <Button onClick={handleVerify} className="w-full">
               Verify
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    </>
-  )
+    </div>
+  );
 }

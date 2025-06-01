@@ -1,7 +1,8 @@
-import { Button } from "../ui/button";
-import { ArrowUpDown, Camera } from "lucide-react";
+"use client"
+
 import type { ColumnDef } from "@tanstack/react-table"
- 
+import { Button } from "@/components/ui/button"
+
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
 // export type Log = {
@@ -13,111 +14,106 @@ import type { ColumnDef } from "@tanstack/react-table"
 //   czas: string            
 // }
 
-export type Log = {
+export interface User {
   _id: string;
-  userId: {
-    _id: string;
-    imie: string;
-  } | null;
+  name: string;
+}
+
+export interface Log {
+  _id: string;
+  userId?: string;
+  user?: User;
   temperatura: number;
   alkohol: number;
   dopuszczony: boolean;
-  czas: Date;
-};
+  czas: string;
+  verificationStatus: 'Unknown' | 'Pending' | 'Verified' | 'Failed';
+  verificationAttempts: number;
+}
 
-export type VerifyHandler = (userId: string) => void;
-
-export const createColumns = (onVerify: VerifyHandler): ColumnDef<Log>[] => [
+export const columns: ColumnDef<Log>[] = [
   {
-    header: "Name",
-    accessorFn: (row) => row.userId?.imie ?? "Unknown",
-    id: "userId",
+    accessorKey: "czas",
+    header: "Time",
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("czas"));
+      return date.toLocaleString('pl-PL', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    },
   },
   {
-    accessorKey: "alkohol",
-    header: ({ column }) => {
-      return (
+    accessorKey: "user",
+    header: "User",
+    cell: ({ row, table }) => {
+      const log = row.original;
+      return log.user?.name || (
         <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          variant="outline"
+          onClick={() => {
+            // @ts-ignore - we'll add this to the table meta
+            table.options.meta?.onSelectUser(log);
+          }}
         >
-          Alcohol
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          Select User
         </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const value = row.getValue("alkohol") as number;
-      return <div>{value.toFixed(2)} ‰</div>;
+      );
     },
   },
   {
     accessorKey: "temperatura",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Temperature
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    header: "Temperature",
     cell: ({ row }) => {
-      const value = row.getValue("temperatura") as number;
-      return <div>{value.toFixed(1)} °C</div>;
+      const temp = parseFloat(row.getValue("temperatura"));
+      return `${temp.toFixed(1)}°C`;
     },
   },
   {
-    accessorKey: "dopuszczony",
+    accessorKey: "alkohol",
+    header: "Alcohol",
+    cell: ({ row }) => {
+      const alcohol = parseFloat(row.getValue("alkohol"));
+      return alcohol.toFixed(2);
+    },
+  },
+  {
+    accessorKey: "verificationStatus",
     header: "Status",
     cell: ({ row }) => {
-      const allowed = row.getValue("dopuszczony") as boolean;
-      return (
-        <div className={allowed ? "text-green-600" : "text-red-600"}>
-          {allowed ? "Allowed" : "Denied"}
-        </div>
-      );
+      const log = row.original;
+      return log.verificationStatus === 'Verified'
+        ? (log.dopuszczony ? 'Allowed' : 'Denied')
+        : log.verificationStatus;
     },
   },
   {
-    accessorKey: "czas",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Time
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    accessorKey: "verificationAttempts",
+    header: "Verification",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("czas"));
-      return <div>{date.toLocaleString()}</div>;
+      const attempts = row.getValue("verificationAttempts") as number;
+      return `${attempts || 0} attempts`;
     },
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const userId = row.original.userId?._id;
-      
-      return (
+    header: "Actions",
+    cell: ({ row, table }) => {
+      const log = row.original;
+      return log.userId && log.verificationStatus !== 'Verified' ? (
         <Button
-          variant="outline"
-          size="icon"
           onClick={() => {
-            if (userId) {
-              onVerify(userId);
-            }
+            // @ts-ignore - we'll add this to the table meta
+            table.options.meta?.onVerify(log);
           }}
-          disabled={!userId}
         >
-          <Camera className="h-4 w-4" />
+          Verify
         </Button>
-      );
+      ) : null;
     },
   },
-]
+];

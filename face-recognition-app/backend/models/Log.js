@@ -23,6 +23,15 @@ const logSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  verificationStatus: {
+    type: String,
+    enum: ['Unknown', 'Pending', 'Verified', 'Failed'],
+    default: 'Unknown'
+  },
+  verificationAttempts: {
+    type: Number,
+    default: 0
+  }
 });
 
 module.exports = mongoose.model("Log", logSchema);

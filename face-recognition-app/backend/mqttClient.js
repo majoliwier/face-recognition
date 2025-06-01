@@ -57,7 +57,7 @@ async function handleDataLog({ temperatura, alkohol }) {
     console.log("Znaleziony użytkownik:", user.imie);
 
     const log = new Log({
-      userId: user._id,
+      userId: null,
       temperatura,
       alkohol,
       dopuszczony,

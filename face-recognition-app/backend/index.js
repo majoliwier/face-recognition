@@ -5,11 +5,16 @@ require("./mqttClient");
 
 require("./config/db");
 const Log = require("./models/Log");
-const User = require("./models/User")
+const User = require("./models/User");
+const usersRouter = require("./routes/users");
+const logsRouter = require("./routes/logs");
 
 const app = express();
 app.use(cors());
 app.use(express.json()); 
+
+app.use("/api/users", usersRouter);
+app.use("/api/logs", logsRouter);
 
 app.get("/api/sensor", (req, res) => {
   res.json({
@@ -18,21 +23,26 @@ app.get("/api/sensor", (req, res) => {
   });
 });
 
-
 app.post("/api/log", async (req, res) => {
   const { userId } = req.body;
 
   const temperatura = sensorData.temperatura;
   const alkohol = sensorData.alkohol;
 
-  const dopuszczony = temperatura < 37.5 && alkohol < 0.2;
+  const dopuszczony = false; // Initially false until verified
+  const verificationStatus = 'Unknown';
 
-  const log = new Log({ userId, temperatura, alkohol, dopuszczony });
+  const log = new Log({ 
+    userId, 
+    temperatura, 
+    alkohol, 
+    dopuszczony,
+    verificationStatus 
+  });
   await log.save();
 
-  res.json({ dopuszczony, temperatura, alkohol });
+  res.json({ temperatura, alkohol });
 });
-
 
 app.get("/api/logs", async (req, res) => {
   try {
@@ -43,7 +53,6 @@ app.get("/api/logs", async (req, res) => {
     res.status(500).json({ error: "Błąd serwera" });
   }
 });
-
 
 app.get("/api/users", async (req, res) => {
   try {
@@ -65,7 +74,6 @@ app.get("/api/dev/clear", async (req, res) => {
     res.status(500).send("=Błąd serwera");
   }
 });
-
 
 const PORT = 3000;
 app.listen(PORT, () => {

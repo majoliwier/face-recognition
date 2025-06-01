@@ -9,11 +9,11 @@ async function main() {
 
     const users = [
       {
-        imie: "Anna Kowalska",
+        name: "Anna Kowalska",
         embedding: Array(128).fill(0.123),
       },
       {
-        imie: "Jan Nowak",
+        name: "Jan Nowak",
         embedding: Array(128).fill(0.456),
       },
     ];

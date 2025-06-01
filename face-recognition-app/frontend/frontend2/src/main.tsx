@@ -5,7 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { SensorDisplay } from './components/Data'
 import LogsTable from './components/LogsTable/page'
 import React from 'react'
-
+import Register from './components/Register/register'
 
 
 createRoot(document.getElementById('root')!).render(
@@ -15,6 +15,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/" element={<AppLayout />}>
           <Route index element={<SensorDisplay />} />
           <Route path="logs" element={<LogsTable />} />
+          <Route path='register' element={<Register/>} />
         </Route>
       </Routes>
     </BrowserRouter>

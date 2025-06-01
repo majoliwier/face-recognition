@@ -1,13 +1,15 @@
 "use client"
 
 import {
-  ColumnDef,
+  type ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
   getPaginationRowModel,
   getSortedRowModel,
-  SortingState,
+  getFilteredRowModel,
+  type SortingState,
+  type ColumnFiltersState
 } from "@tanstack/react-table"
 
 import {
@@ -20,6 +22,7 @@ import {
 } from "@/components/ui/table"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "../ui/input"
 import { useState } from "react"
 
 interface DataTableProps<TData, TValue> {
@@ -36,15 +39,19 @@ export function DataTable<TData, TValue>({
   onVerify,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
     state: {
+      columnFilters,
       sorting,
     },
     meta: {
@@ -54,6 +61,18 @@ export function DataTable<TData, TValue>({
   })
 
   return (
+    <>
+    <div className="flex items-center py-4">
+        <Input
+          placeholder="Filter name..."
+          value={(table.getColumn("user")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("user")?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm"
+        />
+    </div>
+
     <div>
       <div className="rounded-md border">
         <Table>
@@ -124,5 +143,6 @@ export function DataTable<TData, TValue>({
         </Button>
       </div>
     </div>
+    </>
   )
 }

@@ -50,6 +50,9 @@ export const columns: ColumnDef<Log>[] = [
   {
     accessorKey: "user",
     header: "User",
+    filterFn: (row, id, value) => {
+      return row.original.user?.name?.toLowerCase().includes(value.toLowerCase()) || false;
+    },
     cell: ({ row, table }) => {
       const log = row.original;
       return log.user?.name || (

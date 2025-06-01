@@ -1,5 +1,7 @@
 
-import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table"
+import type { ColumnDef, ColumnFiltersState, SortingState } from "@tanstack/react-table"
+import { ArrowUpDown } from "lucide-react"
+
 import React from "react"
 
 import {
@@ -9,6 +11,8 @@ import {
   getFilteredRowModel,
   useReactTable,
   getPaginationRowModel,
+  
+  getSortedRowModel
     
 
 } from "@tanstack/react-table"
@@ -40,7 +44,10 @@ export function DataTable<TData, TValue>({
 
 
     
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+
+
   const table = useReactTable({
     data,
     columns,
@@ -48,8 +55,11 @@ export function DataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
     state: {
       columnFilters,
+      sorting,
     },
   })
  
@@ -57,7 +67,7 @@ export function DataTable<TData, TValue>({
     <>
     <div className="flex items-center py-4">
         <Input
-          placeholder="Filter userID..."
+          placeholder="Filter name..."
           value={(table.getColumn("userId")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("userId")?.setFilterValue(event.target.value)

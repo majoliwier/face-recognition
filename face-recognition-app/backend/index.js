@@ -1,15 +1,15 @@
 const express = require("express");
 const cors = require("cors");
-const sensorData = require("./sensorData");
+const sensorData = require("./config/sensorData");
 require("./mqttClient");
 
-require("./db");
+require("./config/db");
 const Log = require("./models/Log");
+const User = require("./models/User")
 
 const app = express();
 app.use(cors());
-
-
+app.use(express.json()); 
 
 app.get("/api/sensor", (req, res) => {
   res.json({
@@ -35,10 +35,36 @@ app.post("/api/log", async (req, res) => {
 
 
 app.get("/api/logs", async (req, res) => {
-  // const logs = await Log.find().sort({ czas: -1 })
-  // res.json(logs)
-})
+  try {
+    const logs = await Log.find().populate("userId", "imie");
+    res.json(logs);
+  } catch (err) {
+    console.error("❌ Błąd pobierania logów:", err);
+    res.status(500).json({ error: "Błąd serwera" });
+  }
+});
 
+
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    console.error("❌ Błąd pobierania Users:", err);
+    res.status(500).json({ error: "Błąd serwera" });
+  }
+});
+
+app.get("/api/dev/clear", async (req, res) => {
+  try {
+    await Log.deleteMany({});
+    await User.deleteMany({});
+    res.send("Kolekcje zostały wyczyszczone.");
+  } catch (err) {
+    console.error("Błąd przy czyszczeniu kolekcji:", err);
+    res.status(500).send("=Błąd serwera");
+  }
+});
 
 
 const PORT = 3000;

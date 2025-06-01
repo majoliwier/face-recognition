@@ -91,6 +91,7 @@ void mq3_task(void *pvParameters)
 
 
     char msg[32];
+    char msg2[32];
     while (1) {
         int value = mq3_read_raw();
 
@@ -98,12 +99,14 @@ void mq3_task(void *pvParameters)
 
         snprintf(msg, sizeof(msg), "%d", value);
 
+        snprintf(msg2, sizeof(msg2), "%d", 300);
         if (mqtt_client != NULL) {
             ESP_LOGI("Mq3", "mqtt poszło");
             esp_mqtt_client_publish(mqtt_client, "sensor/alkohol", msg, 0, 1, 0);
+            esp_mqtt_client_publish(mqtt_client, "sensor/temperatura", msg2, 0, 1, 0);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(8000));
     }
 }
 

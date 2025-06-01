@@ -5,12 +5,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-
-
-
-// import { SensorDisplay } from "@/custom-components/Data"
-// import DemoPage from "@/logstable/page"
-
 import { Outlet } from "react-router-dom"
 
 export default function AppLayout() {

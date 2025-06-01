@@ -2,6 +2,7 @@ import * as React from "react"
 import {
   BookOpen,
   Bot,
+  Camera,
   Command,
   Frame,
   LifeBuoy,
@@ -94,6 +95,11 @@ const data = {
       //   },
       // ],
     },
+     {
+      title: "Register",
+      url: "/register",
+      icon: Camera,
+    },
     {
       title: "Settings",
       url: "#",
@@ -117,6 +123,7 @@ const data = {
       //   },
       // ],
     },
+   
   ],
   navSecondary: [
     {

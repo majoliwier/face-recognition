@@ -2,10 +2,11 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import AppLayout from './App'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { SensorDisplay } from './components/Data'
+import { SensorDisplay } from './components/Dashboard/SensorDisplay'
 import LogsTable from './components/LogsTable/page'
 import React from 'react'
 import Register from './components/Register/register'
+import Recognition from './components/Dashboard/Recognition'
 
 
 createRoot(document.getElementById('root')!).render(
@@ -13,7 +14,7 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<AppLayout />}>
-          <Route index element={<SensorDisplay />} />
+          <Route index element={<Recognition />} />
           <Route path="logs" element={<LogsTable />} />
           <Route path='register' element={<Register/>} />
         </Route>

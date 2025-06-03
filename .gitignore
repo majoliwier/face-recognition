@@ -4,3 +4,5 @@ build
 sdkconfig
 sdkconfig.ci
 pytest_hello_world.py
+face-recognition-app/backend/face_recognition_service/.idea/
+face-recognition-app/backend/face_recognition_service/stored_embeddings

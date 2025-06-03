@@ -141,6 +141,71 @@ def verify_face():
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
+
+@app.route('/recognize-face', methods=['POST'])
+def recognize_face():
+    logger.info("Received recognize-face request")
+
+    if 'image' not in request.files:
+        logger.error("No image file in request")
+        return jsonify({'error': 'No image file provided'}), 400
+
+    # Zapisz tymczasowo obraz
+    temp_path = 'temp_recognition.jpg'
+
+    try:
+        image = request.files['image']
+        image.save(temp_path)
+
+        img = Image.open(temp_path)
+        face = mtcnn(img)
+
+        if face is None:
+            logger.error("No face detected in the image")
+            return jsonify({'error': 'No face detected in the image'}), 400
+
+        input_embedding = resnet(face.unsqueeze(0)).detach().cpu().numpy().flatten()
+
+        # Przeglądaj wszystkie zapisane embeddingi
+        best_match = None
+        highest_similarity = -1
+        threshold = 0.7  # dopasowanie twarzy
+
+        for file in os.listdir('stored_embeddings'):
+            if file.endswith('.npy'):
+                user_id = os.path.splitext(file)[0]
+                stored_embedding = np.load(os.path.join('stored_embeddings', file))
+                similarity = np.dot(input_embedding, stored_embedding) / (
+                        np.linalg.norm(input_embedding) * np.linalg.norm(stored_embedding)
+                )
+                logger.info(f"Compared with {user_id}: similarity={similarity}")
+
+                if similarity > highest_similarity:
+                    highest_similarity = similarity
+                    best_match = user_id
+
+        if highest_similarity >= threshold:
+            logger.info(f"Best match: {best_match} with similarity {highest_similarity}")
+            return jsonify({
+                'recognized': True,
+                'userId': best_match,
+                'similarity_score': float(highest_similarity)
+            })
+        else:
+            logger.info("No matching user found")
+            return jsonify({
+                'recognized': False,
+                'message': 'No matching user found'
+            })
+
+    except Exception as e:
+        logger.error(f"Error during face recognition: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
 if __name__ == '__main__':
     # Create directory for stored embeddings if it doesn't exist
     os.makedirs('stored_embeddings', exist_ok=True)

@@ -11,6 +11,7 @@ import {
   Send,
   Settings2,
   SquareTerminal,
+  User,
 } from "lucide-react"
 
 import { NavMain } from "@/components/NavBar/nav-main"
@@ -100,6 +101,13 @@ const data = {
       url: "/register",
       icon: Camera,
     },
+
+    {
+      title: "Users",
+      url: "/users",
+      icon: User,
+      
+    },
     {
       title: "Settings",
       url: "#",
@@ -122,7 +130,10 @@ const data = {
       //     url: "#",
       //   },
       // ],
+      
     },
+
+
    
   ],
   navSecondary: [

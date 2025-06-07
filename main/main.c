@@ -21,6 +21,8 @@ static const char *TAG = "MLX90614_EXAMPLE";
 #define MQ3_ADC_CHANNEL ADC1_CHANNEL_6
 #define MQ3_THRESHOLD 1800
 
+esp_mqtt_client_handle_t mqtt_client = NULL;
+
 mlx90614_t sensor = {
     .i2c_port = I2C_PORT,
     .device_addr = MLX90614_ADDRESS,
@@ -80,7 +82,6 @@ mq3_config_t mq3 = {
     .adc_channel = MQ3_ADC_CHANNEL,
     .threshold = MQ3_THRESHOLD
 };
-esp_mqtt_client_handle_t mqtt_client = NULL;
 
 void mq3_task(void *pvParameters)
 {
@@ -95,6 +96,14 @@ void mq3_task(void *pvParameters)
         ESP_LOGI("MQ3", "Poziom alkoholu: %d", value);
 
         snprintf(msg, sizeof(msg), "%d", value);
+
+        float concentration = mq3_get_concentration_mg_per_l(5.0f, 10.0f, 0.38f);
+
+        snprintf(msg2, sizeof(msg2), "%.2f", concentration);
+        ESP_LOGI("MQ3", "Stężenie alkoholu: %s mg/l", msg2);
+        float promille = mq3_convert_to_promille(concentration);
+        ESP_LOGI("MQ3", "Stężenie alkoholu w promilach: %.2f", promille);
+        snprintf(msg, sizeof(msg), "%.2f", promille);
 
         if (mqtt_client != NULL) {
             ESP_LOGI("Mq3", "mqtt poszło");

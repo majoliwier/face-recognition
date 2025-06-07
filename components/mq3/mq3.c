@@ -30,6 +30,10 @@ float mq3_get_concentration_mg_per_l(float Vc, float RL, float Ro) {
     return concentration;
 }
 
+float mq3_convert_to_promille(float mg_per_l) {
+    return mg_per_l * 2.1f;
+}
+
 // int mq3_read(void){
 //     int adc_raw;
 
@@ -84,4 +88,12 @@ float mq3_get_concentration_mg_per_l(float Vc, float RL, float Ro) {
 bool mq3_detected(void) {
     int value = mq3_read_raw();
     return value > mq3_cfg.threshold;
+}
+
+float mq3_calibrate_Ro(float Vc, float RL) {
+    int adc = mq3_read_raw();
+    float VRL = ((float)adc / 4095.0f) * Vc;
+    float Rs = ((Vc / VRL) - 1.0f) * RL;
+
+    return Rs / 60.0f;
 }

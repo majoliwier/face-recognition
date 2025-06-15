@@ -26,6 +26,9 @@ bool mq3_detected(void);
 
 float mq3_get_concentration_mg_per_l(float Vc, float RL, float Ro);
 
+float mq3_convert_to_promille(float mg_per_l);
+
+float mq3_calibrate_Ro(float Vc, float RL);
 
 #ifdef __cplusplus
 }

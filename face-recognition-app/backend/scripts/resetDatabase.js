@@ -17,6 +17,37 @@ async function main() {
     await User.deleteMany({});
     await Log.deleteMany({});
 
+    // Delete Python Embeddings
+    const fs = require('fs');
+    const path = require('path');
+    const rootPath = './face_recognition_service/stored_embeddings';
+
+    const excludedFiles = [
+      '683c5501b4341b30c2990aed.npy',
+      '683c615625ef1e33ae40a6b8.npy'
+    ];
+
+    fs.readdir(rootPath, (err, files) => {
+      if (err) {
+        console.error('Failed to read directory:', err);
+        return;
+      }
+
+      files.forEach(file => {
+        if (file.endsWith('.npy') && !excludedFiles.includes(file)) {
+          const filePath = path.join(rootPath, file);
+          fs.unlink(filePath, (err) => {
+            if (err) {
+              console.error(`Error deleting ${file}:`, err);
+            } else {
+              console.log(`Deleted: ${file}`);
+            }
+          });
+        }
+      });
+    });
+    
+
     // Create mock users
     console.log("👥 Creating mock users...");
     const users = [
@@ -24,21 +55,25 @@ async function main() {
         name: "Anna Kowalska",
         registrationDate: new Date("2024-03-01"),
         embedding: await generateRandomEmbedding(),
+        imageURL: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
       },
       {
         name: "Jan Nowak",
         registrationDate: new Date("2024-03-05"),
         embedding: await generateRandomEmbedding(),
+        imageURL: "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
       },
       {
         name: "Maria Wiśniewska",
         registrationDate: new Date("2024-03-10"),
         embedding: await generateRandomEmbedding(),
+        imageURL: "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
       },
       {
         name: "Piotr Zieliński",
         registrationDate: new Date("2024-03-15"),
         embedding: await generateRandomEmbedding(),
+        imageURL: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
       }
     ];
 

@@ -45,12 +45,14 @@ export default function Register() {
             // Convert base64 to blob
             const base64Data = image.split(',')[1];
             const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob());
-            
+
             // Create form data
             const formData = new FormData();
             formData.append('name', name.trim());
             formData.append('image', blob, 'photo.jpg');
-
+            formData.append('imageURL', image);
+            
+            console.log(formData.get('imageURL'));
             const response = await fetch('http://localhost:3000/api/users/register', {
                 method: 'POST',
                 body: formData, // Send as FormData instead of JSON
@@ -151,6 +153,9 @@ export default function Register() {
                     </form>
                 </CardContent>
             </Card>
+            {image && <img src={image} width={100} height={100}></img>}
         </div>
+
+        
     );
 }

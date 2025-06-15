@@ -38,7 +38,8 @@ router.post('/register', upload.single('image'), async (req, res) => {
       return res.status(400).json({ error: 'No image file provided' });
     }
 
-    const { name } = req.body;
+    const { name, imageURL } = req.body;
+
     if (!name) {
       console.error('No name provided in request');
       return res.status(400).json({ error: 'Name is required' });
@@ -49,7 +50,8 @@ router.post('/register', upload.single('image'), async (req, res) => {
     // Create new user
     const user = new User({
       name,
-      registrationDate: new Date()
+      registrationDate: new Date(),
+      imageURL
     });
     
     console.log('Saving user to database...');
@@ -119,7 +121,7 @@ router.post('/register', upload.single('image'), async (req, res) => {
 // Get all users
 router.get('/', async (req, res) => {
   try {
-    const users = await User.find().select('_id name registrationDate');
+    const users = await User.find().select('_id name registrationDate embedding imageURL');
     res.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);

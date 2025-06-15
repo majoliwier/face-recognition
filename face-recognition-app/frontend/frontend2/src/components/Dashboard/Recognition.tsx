@@ -10,16 +10,20 @@ import {
 } from "@/components/ui/dialog"
 
 import { SensorDisplay } from "./SensorDisplay";
+import { Spinner } from "./Spinner";
 
 export default function Recognition(){
 
     const webcamRef = useRef<Webcam>(null);
     const [isRecognizing, setIsRecognizing] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [isSensorDataDisplayed, setIsSensorDataDisplayed] = useState(false);
     const [userName, setUserName] = useState<string>();
     const [temp, setTemp] = useState<string>();
     const [alc, setAlc] = useState<string>();
+
+    const [noMatch, setNoMatch] = useState(false);
 
     const handleVerify = async () => {
     if (!webcamRef.current) return;
@@ -28,8 +32,10 @@ export default function Recognition(){
     if (!imageSrc) return;
     
     setIsRecognizing(false);
+    setNoMatch(false);
 
     try {
+      
       const base64Data = imageSrc.split(',')[1];
       const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob());
       console.log(`Blob size: ${blob.size}`)
@@ -49,6 +55,7 @@ export default function Recognition(){
         setUserName(result.user.name);
         console.log(result.user.id);
 
+        setIsLoading(true);
         await fetch(`http://localhost:3000/api/logs/${result.user.id}`, {
         method: 'POST',
         headers: {
@@ -56,10 +63,9 @@ export default function Recognition(){
         },
       });
 
-            // Odczekaj, aż dane się zapiszą
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 7000));
 
-        // Pobierz ostatni log
+       
         const res = await fetch(`http://localhost:3000/api/logs/latest/${result.user.id}`);
         const log = await res.json();
 
@@ -67,57 +73,21 @@ export default function Recognition(){
           setTemp(log.temperatura);
           setAlc(log.alkohol);
           setIsSensorDataDisplayed(true);
+          setIsLoading(false);
         }
 
-       
-
-
-
       } else {
-        setUserName("No matching face.")
+        
+        setNoMatch(true);
       }
       
-    //   if (result.match) {
-    //     // Update log status based on verification and conditions
-    //     const updatedLog = {
-    //       ...selectedLog,
-    //       verificationStatus: 'Verified',
-    //       dopuszczony: selectedLog.temperatura < 37.5 && selectedLog.alkohol < 0.2
-    //     };
-        
-    //     // Update the log in the database
-    //     await fetch(`http://localhost:3000/api/logs/${selectedLog._id}`, {
-    //       method: 'PUT',
-    //       headers: {
-    //         'Content-Type': 'application/json',
-    //       },
-    //       body: JSON.stringify(updatedLog),
-    //     });
-
-    //     await fetchLogs(); // Refresh the logs
-    //   } else {
-    //     // Update log status to Failed
-    //     const updatedLog = {
-    //       ...selectedLog,
-    //       verificationStatus: 'Failed',
-    //       verificationAttempts: (selectedLog.verificationAttempts || 0) + 1,
-    //       dopuszczony: false
-    //     };
-        
-    //     await fetch(`http://localhost:3000/api/logs/${selectedLog._id}`, {
-    //       method: 'PUT',
-    //       headers: {
-    //         'Content-Type': 'application/json',
-    //       },
-    //       body: JSON.stringify(updatedLog),
-    //     });
-
-    //     await fetchLogs(); // Refresh the logs
-    //   }
     } catch (error) {
       console.error('Verification error:', error);
+      setIsLoading(false);
+
     } finally {
       setIsRecognizing(false);
+      setIsLoading(false);
      }
   };
 
@@ -135,12 +105,13 @@ export default function Recognition(){
         onClick={()=>{
           setIsRecognizing(true)
           setIsSensorDataDisplayed(false)
+          setNoMatch(false);
         }}>Recognize</Button>
 
         <Dialog open={isRecognizing} onOpenChange={setIsRecognizing}>
         <DialogContent>
             <DialogHeader>
-            <DialogTitle>Verify User</DialogTitle>
+            <DialogTitle>Recognize User</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
             <div className="overflow-hidden rounded-lg">
@@ -159,11 +130,24 @@ export default function Recognition(){
         </DialogContent>
         </Dialog>
 
+        {isLoading && 
+        
+          <Spinner />}
+
         {isSensorDataDisplayed && userName && alc && temp && (
-          <SensorDisplay imie={userName} alkohol={alc} temperatura={temp} />
+          
+            <SensorDisplay imie={userName} alkohol={alc} temperatura={temp} />
         )}
+
+        {noMatch && 
+        <div className="border rounded-xl p-4 bg-muted/50 shadow">
+          <h2>No matching user.</h2>
+        </div>
+        }
         
 
+
+        
         </>
 
 

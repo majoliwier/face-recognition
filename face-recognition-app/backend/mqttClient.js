@@ -57,7 +57,7 @@ client.on("message", async (topic, message) => {
 
 
 async function handleDataLog({ temperatura, alkohol }) {
-  const dopuszczony = temperatura < 37.5 && alkohol < 0.5;
+  const dopuszczony = temperatura > 35.0 && temperatura < 37.5 && alkohol < 0.2;
 
   try {
     const user = await User.findById(pendingUserId);

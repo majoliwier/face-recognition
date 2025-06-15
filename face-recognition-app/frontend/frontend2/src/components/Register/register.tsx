@@ -153,7 +153,7 @@ export default function Register() {
                     </form>
                 </CardContent>
             </Card>
-            {image && <img src={image} width={100} height={100}></img>}
+            
         </div>
 
         

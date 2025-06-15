@@ -97,10 +97,7 @@ void mlx90614_task(void *pvParameters)
          if (trigger_temp_measurement) {
         if (mlx90614_get_ambient_temp(&sensor, &ambient_temp) == ESP_OK) {
             ESP_LOGI(TAG, "Temperatura otoczenia: %.2f°C", ambient_temp);
-            // snprintf(msg_ambient, sizeof(msg_ambient), "%.2f", ambient_temp);
-            // if (mqtt_client != NULL) {
-            //     esp_mqtt_client_publish(mqtt_client, "sensor/temp_otoczenia", msg_ambient, 0, 1, 0);
-            // }
+
         }
 
         if (mlx90614_get_object_temp(&sensor, &object_temp) == ESP_OK) {

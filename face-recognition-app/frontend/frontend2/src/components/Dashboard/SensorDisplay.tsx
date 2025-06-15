@@ -14,9 +14,10 @@ export function SensorDisplay({imie,temperatura,alkohol} : SensorData) {
       <h2 className="text-lg font-semibold mb-2">Measurement:</h2>
       <p>Name: <strong>{imie}</strong></p>
       <p>Temperature: <strong>{temperatura}°C</strong></p>
-      <p>Alcohol: <strong>{alkohol}%</strong></p>
+      <p>Alcohol: <strong>{alkohol}‰</strong></p>
       
     </div>
+  
 
 
 

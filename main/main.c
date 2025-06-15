@@ -22,7 +22,50 @@ static const char *TAG = "MLX90614_EXAMPLE";
 #define MQ3_ADC_CHANNEL ADC1_CHANNEL_6
 #define MQ3_THRESHOLD 1800
 
-esp_mqtt_client_handle_t mqtt_client = NULL;
+volatile bool trigger_temp_measurement = false;
+volatile bool trigger_alcohol_measurement = false;
+
+
+static void mqtt_event_handler_cb(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
+{
+    esp_mqtt_event_handle_t event = event_data;
+
+    switch (event_id) {
+        case MQTT_EVENT_CONNECTED:
+            ESP_LOGI("MQTT", "Połączono z brokerem");
+            esp_mqtt_client_subscribe(event->client, "sensor/pomiar", 1);
+            break;
+
+        case MQTT_EVENT_DATA:
+            if (strncmp(event->topic, "sensor/pomiar", event->topic_len) == 0) {
+                ESP_LOGI("MQTT", "Odebrano polecenie pomiaru.");
+                trigger_temp_measurement = true;
+                trigger_alcohol_measurement = true;
+
+            }
+            break;
+
+        default:
+            break;
+    }
+}
+
+esp_mqtt_client_handle_t mqtt_client;
+
+void mqtt_app_start(void)
+{
+    esp_mqtt_client_config_t mqtt_cfg = {
+        .broker = {
+            .address.uri = "mqtt://broker.hivemq.com",
+        },
+        
+    };
+
+    mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_register_event(mqtt_client, ESP_EVENT_ANY_ID, mqtt_event_handler_cb, NULL);
+    esp_mqtt_client_start(mqtt_client);
+}
+
 
 mlx90614_t sensor = {
     .i2c_port = I2C_PORT,
@@ -51,6 +94,7 @@ void mlx90614_task(void *pvParameters)
     char msg_object[32];
 
     while (1) {
+         if (trigger_temp_measurement) {
         if (mlx90614_get_ambient_temp(&sensor, &ambient_temp) == ESP_OK) {
             ESP_LOGI(TAG, "Temperatura otoczenia: %.2f°C", ambient_temp);
             // snprintf(msg_ambient, sizeof(msg_ambient), "%.2f", ambient_temp);
@@ -61,21 +105,26 @@ void mlx90614_task(void *pvParameters)
 
         if (mlx90614_get_object_temp(&sensor, &object_temp) == ESP_OK) {
             ESP_LOGI(TAG, "Temperatura obiektu: %.2f°C", object_temp);
-           if (object_temp > 30.0f) {
-                snprintf(msg_object, sizeof(msg_object), "%.2f", object_temp);
+           
+            snprintf(msg_object, sizeof(msg_object), "%.2f", object_temp);
 
-                if (mqtt_client != NULL) {
-                    ESP_LOGI(TAG, "Wysyłanie temperatury przez MQTT: %s", msg_object);
-                    esp_mqtt_client_publish(mqtt_client, "sensor/temperatura", msg_object, 0, 1, 0);
-                }
+            if (mqtt_client != NULL) {
+                ESP_LOGI(TAG, "Wysyłanie temperatury przez MQTT: %s", msg_object);
+                esp_mqtt_client_publish(mqtt_client, "sensor/temperatura", msg_object, 0, 1, 0);
             }
+            
         }
 
         if (mlx90614_read_flags(&sensor, &flags) == ESP_OK && flags != 0) {
             ESP_LOGW(TAG, "Flagi czujnika: 0x%02X", flags);
+
         }
 
+        trigger_temp_measurement = false;
+    }
+
         vTaskDelay(pdMS_TO_TICKS(8000));
+    
     }
 }
 
@@ -83,6 +132,7 @@ mq3_config_t mq3 = {
     .adc_channel = MQ3_ADC_CHANNEL,
     .threshold = MQ3_THRESHOLD
 };
+esp_mqtt_client_handle_t mqtt_client = NULL;
 
 void mq3_task(void *pvParameters)
 {
@@ -92,43 +142,36 @@ void mq3_task(void *pvParameters)
     char msg[32];
     char msg2[32];
     while (1) {
-        int value = mq3_read_raw();
+         if (trigger_alcohol_measurement) {
+            int value = mq3_read_raw();
 
-        ESP_LOGI("MQ3", "Poziom alkoholu: %d", value);
+            ESP_LOGI("MQ3", "Poziom alkoholu: %d", value);
 
-        snprintf(msg, sizeof(msg), "%d", value);
+            snprintf(msg, sizeof(msg), "%d", value);
 
-        float concentration = mq3_get_concentration_mg_per_l(5.0f, 10.0f, 0.38f);
+            float concentration = mq3_get_concentration_mg_per_l(5.0f, 10.0f, 0.38f);
 
-        snprintf(msg2, sizeof(msg2), "%.2f", concentration);
-        ESP_LOGI("MQ3", "Stężenie alkoholu: %s mg/l", msg2);
-        float promille = mq3_convert_to_promille(concentration);
-        ESP_LOGI("MQ3", "Stężenie alkoholu w promilach: %.2f", promille);
-        snprintf(msg, sizeof(msg), "%.2f", promille);
+            snprintf(msg2, sizeof(msg2), "%.2f", concentration);
+            ESP_LOGI("MQ3", "Stężenie alkoholu: %s mg/l", msg2);
+            float promille = mq3_convert_to_promille(concentration);
+            ESP_LOGI("MQ3", "Stężenie alkoholu w promilach: %.2f", promille);
+            snprintf(msg, sizeof(msg), "%.2f", promille);
 
-        if (mqtt_client != NULL) {
-            ESP_LOGI("Mq3", "mqtt poszło");
-            esp_mqtt_client_publish(mqtt_client, "sensor/alkohol", msg, 0, 1, 0);
-           
-        }
+            if (mqtt_client != NULL) {
+               
+                esp_mqtt_client_publish(mqtt_client, "sensor/alkohol", msg, 0, 1, 0);
+            
+            }
+
+            trigger_alcohol_measurement = false;
+    }
 
         vTaskDelay(pdMS_TO_TICKS(8000));
+    
     }
 }
 
 
-void mqtt_app_start(void)
-{
-    esp_mqtt_client_config_t mqtt_cfg = {
-        .broker = {
-            .address.uri = "mqtt://broker.hivemq.com",
-        },
-        
-    };
-
-    mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
-    esp_mqtt_client_start(mqtt_client);
-}
 void app_main(void)
 {
     esp_err_t ret = nvs_flash_init();

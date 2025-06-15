@@ -1,8 +1,8 @@
 
 type SensorData = {
   imie: string,
-  temperatura: number
-  alkohol: number
+  temperatura: string
+  alkohol: string
 }
 
 

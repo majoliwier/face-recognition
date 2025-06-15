@@ -15,7 +15,11 @@ export default function Recognition(){
 
     const webcamRef = useRef<Webcam>(null);
     const [isRecognizing, setIsRecognizing] = useState(false);
+
+    const [isSensorDataDisplayed, setIsSensorDataDisplayed] = useState(false);
     const [userName, setUserName] = useState<string>();
+    const [temp, setTemp] = useState<string>();
+    const [alc, setAlc] = useState<string>();
 
     const handleVerify = async () => {
     if (!webcamRef.current) return;
@@ -26,15 +30,12 @@ export default function Recognition(){
     setIsRecognizing(false);
 
     try {
-      // Convert base64 to blob
       const base64Data = imageSrc.split(',')[1];
       const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob());
       console.log(`Blob size: ${blob.size}`)
       
-      // Create form data
       const formData = new FormData();
       formData.append('image', blob, 'photo.jpg');
-    //   formData.append('userId', selectedLog.userId || '');
 
       const response = await fetch('http://localhost:3000/api/users/recognize', {
         method: 'POST',
@@ -46,8 +47,34 @@ export default function Recognition(){
 
       if (result.recognized) {
         setUserName(result.user.name);
+        console.log(result.user.id);
+
+        await fetch(`http://localhost:3000/api/logs/${result.user.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+            // Odczekaj, aż dane się zapiszą
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        // Pobierz ostatni log
+        const res = await fetch(`http://localhost:3000/api/logs/latest/${result.user.id}`);
+        const log = await res.json();
+
+        if (log && log.temperatura && log.alkohol) {
+          setTemp(log.temperatura);
+          setAlc(log.alkohol);
+          setIsSensorDataDisplayed(true);
+        }
+
+       
+
+
+
       } else {
-        setUserName("No matching face")
+        setUserName("No matching face.")
       }
       
     //   if (result.match) {
@@ -103,7 +130,12 @@ export default function Recognition(){
   
     return(
         <>
-        <Button onClick={()=>setIsRecognizing(true)}>Recognize</Button>
+        <Button  
+        className="w-[200px] mx-auto"
+        onClick={()=>{
+          setIsRecognizing(true)
+          setIsSensorDataDisplayed(false)
+        }}>Recognize</Button>
 
         <Dialog open={isRecognizing} onOpenChange={setIsRecognizing}>
         <DialogContent>
@@ -127,8 +159,11 @@ export default function Recognition(){
         </DialogContent>
         </Dialog>
 
-        {userName && <SensorDisplay imie={userName} alkohol={10} temperatura={100}/>}
+        {isSensorDataDisplayed && userName && alc && temp && (
+          <SensorDisplay imie={userName} alkohol={alc} temperatura={temp} />
+        )}
         
+
         </>
 
 

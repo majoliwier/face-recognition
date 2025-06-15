@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Log = require('../models/Log');
 
+const { client: mqttClient, setPendingUserId } = require('../mqttClient');
+
 // Get all logs with user details
 router.get('/', async (req, res) => {
   try {
@@ -22,33 +24,71 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Update a log
-router.put('/:id', async (req, res) => {
+// Get a measurement for User
+
+const triggerMesurementTopic = "sensor/pomiar";
+router.post('/:userId', async (req, res) => {
   try {
-    const { id } = req.params;
-    const updateData = req.body;
+    const { userId } = req.params;
 
-    const log = await Log.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    ).populate('userId', 'name');
+    // Zapisz userId w pendingUserId
+    setPendingUserId(userId);
 
-    if (!log) {
-      return res.status(404).json({ error: 'Log not found' });
-    }
+    // Wyślij sygnał do czujnika
+    mqttClient.publish(triggerMesurementTopic, "");
 
-    // Transform the data to match the frontend expectations
-    const transformedLog = {
-      ...log.toObject(),
-      user: log.userId ? { _id: log.userId._id, name: log.userId.name } : null
-    };
-
-    res.json(transformedLog);
+    res.status(200).json({ message: "Measurement triggered for userId: " + userId });
   } catch (err) {
     console.error('Error updating log:', err);
-    res.status(500).json({ error: 'Failed to update log' });
+    res.status(500).json({ error: 'Failed to get measurements for userId' });
   }
 });
+
+router.get('/latest/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const lastLog = await Log.findOne({ userId })
+      .sort({ czas: -1 }); // najnowszy wpis
+
+    if (!lastLog) {
+      return res.status(404).json({ error: 'No log found for user' });
+    }
+
+    res.json(lastLog);
+  } catch (err) {
+    console.error('Error getting latest log:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+// Update a log
+// router.put('/:id', async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updateData = req.body;
+
+//     const log = await Log.findByIdAndUpdate(
+//       id,
+//       updateData,
+//       { new: true }
+//     ).populate('userId', 'name');
+
+//     if (!log) {
+//       return res.status(404).json({ error: 'Log not found' });
+//     }
+
+//     // Transform the data to match the frontend expectations
+//     const transformedLog = {
+//       ...log.toObject(),
+//       user: log.userId ? { _id: log.userId._id, name: log.userId.name } : null
+//     };
+
+//     res.json(transformedLog);
+//   } catch (err) {
+//     console.error('Error updating log:', err);
+//     res.status(500).json({ error: 'Failed to update log' });
+//   }
+// });
 
 module.exports = router; 

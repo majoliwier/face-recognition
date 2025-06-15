@@ -8,6 +8,13 @@ const client = mqtt.connect("mqtt://broker.hivemq.com");
 
 const tempTopic = "sensor/temperatura";
 const alcTopic = "sensor/alkohol";
+const triggerMesurementTopic = "sensor/pomiar";
+
+let pendingUserId = null;
+
+function setPendingUserId(id) {
+  pendingUserId = id;
+}
 
 let current = {
   temperatura: null,
@@ -50,25 +57,35 @@ client.on("message", async (topic, message) => {
 
 
 async function handleDataLog({ temperatura, alkohol }) {
-  const dopuszczony = temperatura < 37.5 && alkohol < 0.2;
+  const dopuszczony = temperatura < 37.5 && alkohol < 0.5;
 
   try {
-    const user = await findMatchingUserMock();
-    console.log("Znaleziony użytkownik:", user.imie);
+    const user = await User.findById(pendingUserId);
+    if (!user) {
+      throw new Error(`Nie znaleziono użytkownika o ID ${pendingUserId}`);
+    }
+    console.log("Znaleziony użytkownik:", user.name);
 
     const log = new Log({
-      userId: null,
+      userId: pendingUserId || null,
       temperatura,
       alkohol,
       dopuszczony,
     });
 
     await log.save();
-    console.log(`Zapisano log dla ${user.imie}`);
+    console.log(`Zapisano log dla ${user.name} (userId: ${pendingUserId})`);
+    console.log(log);
   } catch (err) {
     console.error("Błąd zapisu logu:", err);
+  } finally {
+    pendingUserId = null;
   }
 }
 
 
-module.exports = client;
+module.exports = {
+  client,
+  setPendingUserId
+};
+

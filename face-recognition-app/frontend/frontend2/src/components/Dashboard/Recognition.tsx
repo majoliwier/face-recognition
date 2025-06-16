@@ -63,7 +63,7 @@ export default function Recognition(){
         },
       });
 
-        await new Promise(resolve => setTimeout(resolve, 7000));
+        await new Promise(resolve => setTimeout(resolve, 9000));
 
        
         const res = await fetch(`http://localhost:3000/api/logs/latest/${result.user.id}`);
@@ -74,22 +74,22 @@ export default function Recognition(){
           setAlc(log.alkohol);
           setIsSensorDataDisplayed(true);
 
-          if (!log.dopuszczony) {
-              let reason = '';
-              switch (log.rejectionReason) {
-                case 'HighTemperature':
-                  reason = 'Too high temperature';
-                  break;
-                case 'HighAlcohol':
-                  reason = 'Too high alcohol';
-                  break;
-                case 'Both':
-                  reason = 'Too high temperature and alcohol.';
-                  break;
+          // if (!log.dopuszczony) {
+          //     let reason = '';
+          //     switch (log.rejectionReason) {
+          //       case 'HighTemperature':
+          //         reason = 'Too high temperature';
+          //         break;
+          //       case 'HighAlcohol':
+          //         reason = 'Too high alcohol';
+          //         break;
+          //       case 'Both':
+          //         reason = 'Too high temperature and alcohol.';
+          //         break;
             
-              }
-              alert(reason); // lub ustaw w stanie i pokaż w UI
-            }
+          //     }
+          //     alert(reason);
+          //   }
 
           setIsLoading(false);
         }

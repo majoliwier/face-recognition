@@ -101,6 +101,7 @@ void mlx90614_task(void *pvParameters)
         }
 
         if (mlx90614_get_object_temp(&sensor, &object_temp) == ESP_OK) {
+            object_temp += 2.0;
             ESP_LOGI(TAG, "Temperatura obiektu: %.2f°C", object_temp);
            
             snprintf(msg_object, sizeof(msg_object), "%.2f", object_temp);

@@ -29,7 +29,7 @@ app.post("/api/log", async (req, res) => {
   const temperatura = sensorData.temperatura;
   const alkohol = sensorData.alkohol;
 
-  const dopuszczony = false; // Initially false until verified
+  const dopuszczony = false;
   const verificationStatus = 'Unknown';
 
   const log = new Log({ 

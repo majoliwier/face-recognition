@@ -20,10 +20,12 @@ export type Log = {
     _id: string;
     name: string;
   } | null;
+  
   temperatura: number;
   alkohol: number;
   dopuszczony: boolean;
   czas: Date;
+  rejectionReason?: 'None' | 'HighTemperature' | 'HighAlcohol' | 'Both' | 'LowTemperature' | 'LowTemperatureAndHighAlcohol';
 };
  
 
@@ -45,6 +47,28 @@ export const columns: ColumnDef<Log>[] = [
   {
     accessorKey: "dopuszczony",
     header: "Has access?"
+  },
+
+  {
+    accessorKey: "rejectionReason",
+    header: "Rejection Reason",
+    cell: ({ row }) => {
+      const reason = row.original.rejectionReason;
+      switch (reason) {
+        case "HighTemperature":
+          return "High temperature";
+        case "LowTemperature":
+          return "Low temperature";
+        case "HighAlcohol":
+          return "High alcohol level";
+        case "Both":
+          return "High temperature and alcohol";
+        case "LowTemperatureAndHighAlcohol":
+          return "Low temperature and high alcohol";
+        default:
+          return "-";
+      }
+    }
   },
   {
     accessorKey: "czas",

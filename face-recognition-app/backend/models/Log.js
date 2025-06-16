@@ -31,6 +31,19 @@ const logSchema = new mongoose.Schema({
   verificationAttempts: {
     type: Number,
     default: 0
+  },
+
+  rejectionReason: {
+  type: String,
+  enum: [
+    'None',
+    'HighTemperature',
+    'LowTemperature',
+    'HighAlcohol',
+    'Both',
+    'LowTemperatureAndHighAlcohol'
+    ],
+    default: 'None'
   }
 });
 

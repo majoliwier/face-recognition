@@ -73,6 +73,24 @@ export default function Recognition(){
           setTemp(log.temperatura);
           setAlc(log.alkohol);
           setIsSensorDataDisplayed(true);
+
+          if (!log.dopuszczony) {
+              let reason = '';
+              switch (log.rejectionReason) {
+                case 'HighTemperature':
+                  reason = 'Too high temperature';
+                  break;
+                case 'HighAlcohol':
+                  reason = 'Too high alcohol';
+                  break;
+                case 'Both':
+                  reason = 'Too high temperature and alcohol.';
+                  break;
+            
+              }
+              alert(reason); // lub ustaw w stanie i pokaż w UI
+            }
+
           setIsLoading(false);
         }
 

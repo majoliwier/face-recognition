@@ -3,6 +3,8 @@ type SensorData = {
   imie: string,
   temperatura: string
   alkohol: string
+  dopuszczone: boolean,
+  rejectionReason: string
 }
 
 

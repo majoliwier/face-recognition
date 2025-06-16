@@ -57,7 +57,27 @@ client.on("message", async (topic, message) => {
 
 
 async function handleDataLog({ temperatura, alkohol }) {
-  const dopuszczony = temperatura > 35.0 && temperatura < 37.5 && alkohol < 0.2;
+  const tooLowTemp = temperatura < 35;
+  const tooHighTemp = temperatura >= 37.5;
+  const highAlcohol = alkohol >= 0.5;
+
+  const dopuszczony = !tooLowTemp && !tooHighTemp && !highAlcohol;
+
+  let rejectionReason = 'None';
+
+  if (!dopuszczony) {
+    if ((tooHighTemp && highAlcohol) || (tooLowTemp && tooHighTemp && highAlcohol)) {
+      rejectionReason = 'Both';
+    } else if (tooLowTemp && highAlcohol) {
+      rejectionReason = 'LowTemperatureAndHighAlcohol';
+    } else if (tooHighTemp) {
+      rejectionReason = 'HighTemperature';
+    } else if (tooLowTemp) {
+      rejectionReason = 'LowTemperature';
+    } else if (highAlcohol) {
+      rejectionReason = 'HighAlcohol';
+    }
+  }
 
   try {
     const user = await User.findById(pendingUserId);
@@ -71,6 +91,7 @@ async function handleDataLog({ temperatura, alkohol }) {
       temperatura,
       alkohol,
       dopuszczony,
+      rejectionReason,
     });
 
     await log.save();
